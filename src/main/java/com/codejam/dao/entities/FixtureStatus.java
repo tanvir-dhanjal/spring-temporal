@@ -1,0 +1,13 @@
+package com.codejam.dao.entities;
+
+public enum FixtureStatus {
+    SCHEDULED,
+    PENDING_PLAYED_CONFIRMATION,
+    CONFIRMED,
+    PLAYED,
+    PENDING_SCORE_UPDATE,
+    SCORE_PUBLISHED,
+    PENDING_SCORE_CONFIRMATION,
+    SCORE_VALIDATED,
+    COMPLETED;
+}
