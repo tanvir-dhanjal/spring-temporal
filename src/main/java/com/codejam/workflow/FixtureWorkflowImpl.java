@@ -20,6 +20,7 @@ public class FixtureWorkflowImpl implements FixtureWorkflow {
             .setInitialInterval(Duration.ofSeconds(10))
             .setBackoffCoefficient(4)
             .setMaximumInterval(Duration.ofSeconds(60))
+            .setMaximumAttempts(30)
             .build();
 
     private final ActivityOptions options =
@@ -40,22 +41,37 @@ public class FixtureWorkflowImpl implements FixtureWorkflow {
             activities.sendFixtureNotifications(fixture.getFixtureId(), fixture.getPlayerTwoId());
 
             // Check if fixture was confirmed by other player
-            Workflow.await(() -> activities.confirmFixture(fixture.getFixtureId()));
+            while (!activities.confirmFixture(fixture.getFixtureId())) {
+                LOGGER.info("fixture was not confirmed yet , will retry in 60 sec");
+                // Sleep for 60 secs
+                Workflow.sleep(Duration.ofSeconds(60));
+            }
 
             // Check if fixture was played
-            Workflow.await(() -> activities.confirmFixturePlayed(fixture.getFixtureId()));
-
-            // Send notification about pending score
-            activities.publishFixtureScoreReminder(fixture.getFixtureId(), fixture.getPlayerOneId());
+            while (!activities.confirmFixturePlayed(fixture.getFixtureId())) {
+                // Sleep for 60 secs
+                Workflow.sleep(Duration.ofSeconds(60));
+            }
 
             // Check if Feature score published
-            Workflow.await(() -> activities.checkFixtureScorePublished(fixture.getFixtureId()));
+            boolean scoreReminder = false;
+            while (!activities.checkFixtureScorePublished(fixture.getFixtureId())) {
+                if (!scoreReminder) {
+                    // Send notification about pending score
+                    activities.publishFixtureScoreReminder(fixture.getFixtureId(), fixture.getPlayerOneId());
+                }
+                // Sleep for 60 secs
+                Workflow.sleep(Duration.ofSeconds(60));
+                scoreReminder = true;
+            }
 
             // Check if Feature score was validated by other player
-            Workflow.await(() -> activities.confirmFixtureScore(fixture.getFixtureId()));
-
+            while (!activities.confirmFixtureScore(fixture.getFixtureId())) {
+                // Sleep for 60 secs
+                Workflow.sleep(Duration.ofSeconds(60));
+            }
         } catch (ActivityFailure | ServiceException e) {
-            LOGGER.error("Failed at fetch Fixture {}", e);
+            LOGGER.error("Failed to execute workflow with " + e);
         }
     }
 }

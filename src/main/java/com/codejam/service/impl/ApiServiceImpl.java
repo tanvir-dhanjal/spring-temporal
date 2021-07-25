@@ -12,6 +12,7 @@ import com.codejam.error.ServiceErrorsEnum;
 import com.codejam.error.ServiceException;
 import com.codejam.service.ApiService;
 import com.codejam.workflow.FixtureWorkflow;
+import io.temporal.api.common.v1.WorkflowExecution;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowException;
 import io.temporal.client.WorkflowOptions;
@@ -73,7 +74,11 @@ public class ApiServiceImpl implements ApiService {
             //Trigger work flow
             final WorkflowOptions options = WorkflowOptions.newBuilder().setTaskQueue(TASK_QUEUE).build();
             final FixtureWorkflow fixtureWorkflow = workflowClient.newWorkflowStub(FixtureWorkflow.class, options);
-            fixtureWorkflow.runFixtureWorkflow(fixture);
+
+            // Returns as soon as the workflow starts.
+            final WorkflowExecution workflowExecution = WorkflowClient.start(fixtureWorkflow::runFixtureWorkflow,fixture);
+            LOGGER.info("Started process file workflow with workflowId=\"" + workflowExecution.getWorkflowId()
+                    + "\" and runId=\"" + workflowExecution.getRunId() + "\"");
 
             return CompletableFuture.completedFuture(fixture);
         } catch (ParseException | WorkflowException e) {

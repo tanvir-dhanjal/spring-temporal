@@ -1,6 +1,5 @@
 package com.codejam.config;
 
-import com.codejam.dao.entities.Fixture;
 import com.codejam.dao.respository.FixtureRepository;
 import com.codejam.workflow.FixtureActivitiesImpl;
 import com.codejam.workflow.FixtureWorkflowImpl;
