@@ -2,7 +2,6 @@ package com.codejam.resource;
 
 import com.codejam.service.impl.ApiServiceImpl;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.ws.rs.Consumes;
@@ -78,12 +77,23 @@ public class PlayersResource {
                            @PathParam("fixtureId") final Long fixtureId,
                            @Suspended final AsyncResponse asyncResponse) {
         completeResponse(() ->
-                        playersService.getFixture(fixtureId),
+                        playersService.getFixture(playerId, fixtureId),
                 asyncResponse);
     }
 
     @POST
     @Path("/players/{playerId}/fixture/{fixtureId}")
+    public void updateFixture(@PathParam("playerId") final Long playerId,
+                              @PathParam("fixtureId") final Long fixtureId,
+                              @FormParam("Status") final String status,
+                              @Suspended final AsyncResponse asyncResponse) {
+        completeResponse(() ->
+                        playersService.updateFixture(playerId, fixtureId, status),
+                asyncResponse);
+    }
+
+    @POST
+    @Path("/players/{playerId}/fixture/{fixtureId}/score")
     public void createFixtureSetScore(@PathParam("playerId") final Long playerId,
                                       @PathParam("fixtureId") final Long fixtureId,
                                       @FormParam("SetNumber") final Integer setNumber,

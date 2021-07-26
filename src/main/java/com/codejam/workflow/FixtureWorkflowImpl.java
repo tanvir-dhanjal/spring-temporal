@@ -32,6 +32,8 @@ public class FixtureWorkflowImpl implements FixtureWorkflow {
     private final FixtureActivities activities =
             Workflow.newActivityStub(FixtureActivities.class, options);
 
+    private boolean isFixtureCanceled = false;
+
     @Override
     public void runFixtureWorkflow(Fixture fixture) {
         try {
@@ -41,21 +43,21 @@ public class FixtureWorkflowImpl implements FixtureWorkflow {
             activities.sendFixtureNotifications(fixture.getFixtureId(), fixture.getPlayerTwoId());
 
             // Check if fixture was confirmed by other player
-            while (!activities.confirmFixture(fixture.getFixtureId())) {
+            while (!activities.confirmFixture(fixture.getFixtureId()) && !isFixtureCanceled) {
                 LOGGER.info("fixture was not confirmed yet , will retry in 60 sec");
                 // Sleep for 60 secs
                 Workflow.sleep(Duration.ofSeconds(60));
             }
 
             // Check if fixture was played
-            while (!activities.confirmFixturePlayed(fixture.getFixtureId())) {
+            while (!activities.confirmFixturePlayed(fixture.getFixtureId()) && !isFixtureCanceled) {
                 // Sleep for 60 secs
                 Workflow.sleep(Duration.ofSeconds(60));
             }
 
             // Check if Feature score published
             boolean scoreReminder = false;
-            while (!activities.checkFixtureScorePublished(fixture.getFixtureId())) {
+            while (!activities.checkFixtureScorePublished(fixture.getFixtureId()) && !isFixtureCanceled) {
                 if (!scoreReminder) {
                     // Send notification about pending score
                     activities.publishFixtureScoreReminder(fixture.getFixtureId(), fixture.getPlayerOneId());
@@ -66,12 +68,18 @@ public class FixtureWorkflowImpl implements FixtureWorkflow {
             }
 
             // Check if Feature score was validated by other player
-            while (!activities.confirmFixtureScore(fixture.getFixtureId())) {
+            while (!activities.confirmFixtureScore(fixture.getFixtureId()) && !isFixtureCanceled) {
                 // Sleep for 60 secs
                 Workflow.sleep(Duration.ofSeconds(60));
             }
         } catch (ActivityFailure | ServiceException e) {
             LOGGER.error("Failed to execute workflow with " + e);
         }
+    }
+
+    @Override
+    public void cancelFixture() {
+        LOGGER.info("Cancelling the fixture");
+        isFixtureCanceled = true;
     }
 }

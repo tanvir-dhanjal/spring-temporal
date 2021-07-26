@@ -75,10 +75,12 @@ public class ApiServiceImpl implements ApiService {
             final WorkflowOptions options = WorkflowOptions.newBuilder().setTaskQueue(TASK_QUEUE).build();
             final FixtureWorkflow fixtureWorkflow = workflowClient.newWorkflowStub(FixtureWorkflow.class, options);
 
-            // Returns as soon as the workflow starts.
-            final WorkflowExecution workflowExecution = WorkflowClient.start(fixtureWorkflow::runFixtureWorkflow,fixture);
+            // Returns as soon as the workflow starts and save workflow id in DB.
+            final WorkflowExecution workflowExecution = WorkflowClient.start(fixtureWorkflow::runFixtureWorkflow, fixture);
             LOGGER.info("Started process file workflow with workflowId=\"" + workflowExecution.getWorkflowId()
                     + "\" and runId=\"" + workflowExecution.getRunId() + "\"");
+            fixture.setWorkflowId(workflowExecution.getWorkflowId());
+            fixtureRepository.save(fixture);
 
             return CompletableFuture.completedFuture(fixture);
         } catch (ParseException | WorkflowException e) {
@@ -88,14 +90,32 @@ public class ApiServiceImpl implements ApiService {
     }
 
     @Override
-    public CompletionStage<Fixture> getFixture(Long fixtureId) {
-        final Optional<Fixture> fixture = fixtureRepository.findById(fixtureId);
-        if (fixture.isPresent()) {
-            return CompletableFuture.completedFuture(fixture.get());
-        } else {
-            LOGGER.error("Fixture with id {} not found", fixtureId);
-            throw new ServiceException(ServiceErrorsEnum.FIXTURE_NOT_FOUND);
-        }
+    public CompletionStage<Fixture> getFixture(Long playerId, Long fixtureId) {
+        return getPlayer(playerId)
+                .thenApply(player -> Optional.ofNullable(fixtureRepository.getPlayerFixture(playerId, fixtureId))
+                        .orElseThrow(() -> new ServiceException(ServiceErrorsEnum.FIXTURE_NOT_FOUND)));
+    }
+
+    @Override
+    public CompletionStage<Fixture> updateFixture(Long playerId, Long fixtureId, String status) {
+        return getFixture(playerId, fixtureId)
+                .thenApply(fixture -> {
+                    final FixtureStatus fixtureStatus = FixtureStatus.getEnum(status.toLowerCase());
+                    if (fixtureStatus == FixtureStatus.CANCELED) {
+                        LOGGER.warn("Cancelling Fixture workflow and fixture");
+                        FixtureWorkflow workflowById = workflowClient.newWorkflowStub(FixtureWorkflow.class, fixture.getWorkflowId());
+
+                        // Send the signal to our complete the workflow and cancel fixture.
+                        workflowById.cancelFixture();
+                    }
+
+                    if (fixtureStatus == FixtureStatus.INVALID) {
+                        throw new ServiceException(ServiceErrorsEnum.INVALID_FIXTURE_STATUS);
+                    }
+
+                    fixture.setStatus(fixtureStatus);
+                    return fixtureRepository.save(fixture);
+                });
     }
 
     @Override

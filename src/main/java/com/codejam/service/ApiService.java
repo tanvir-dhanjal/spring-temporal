@@ -13,7 +13,9 @@ public interface ApiService {
 
     CompletionStage<Fixture> createFixture(Long playerOneId, Long playerTwoId, String scheduledFor);
 
-    CompletionStage<Fixture> getFixture(Long fixtureId);
+    CompletionStage<Fixture> getFixture(Long playerId, Long fixtureId);
+
+    CompletionStage<Fixture> updateFixture(Long playerId, Long fixtureId, String fixtureStatus);
 
     CompletionStage<FixtureSetScore> createFixtureSetScore(Long fixtureId, Integer setNumber, Integer playerOneSetScore, Integer playerTwoSetScore);
 }

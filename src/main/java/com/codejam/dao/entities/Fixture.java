@@ -1,7 +1,9 @@
 package com.codejam.dao.entities;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 import javax.persistence.Column;
@@ -19,6 +21,7 @@ import java.util.Date;
 @Getter
 @ToString
 @NoArgsConstructor
+@Setter
 @Table(name = "fixture")
 public class Fixture extends AbstractEntity implements Serializable {
     @Id
@@ -41,6 +44,9 @@ public class Fixture extends AbstractEntity implements Serializable {
 
     @Column(name = "created_by")
     private Long createdBy;
+
+    @Column(name = "workflow_id")
+    private String workflowId;
 
     public Fixture(Long playerOneId, Long playerTwoId, FixtureStatus status, Date scheduledFor,  Long createdBy) {
         this.playerOneId = playerOneId;

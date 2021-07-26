@@ -1,12 +1,18 @@
 # spring-temporal
-Describing temporal workflow in spring boot.
+This example shows how we can use temporal workflow with Spring Boot JPA. We use Tennis game fixture as Describing temporal workflow in spring boot.
 
--   Register Player
--   Set up a tennis match
--   Send Reminder of match
--   Check if match was played ( Ask both players )
--   if played request to enter scorecard 
--   Scorecard verification and sign off by both players
--   complete match
+Below is the sequence diagram which highlights defferent states we track in temporal workflow.
+
+<h4>Sequence Diagram </h4>
+
+![alt text](workflow.png)
+
+<br></br>
+<h4>Set Up</h4>
+
+To run this locally please run ***docker-compose up*** and you can check temporal server at http://localhost:8088/.
+
+![alt text](workflow_snapshot.png)
+
 
 
